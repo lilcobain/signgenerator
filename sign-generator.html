@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Генератор навигационных табличек</title>
+<style>
+:root{--bg:#0b0b0b;--panel:#151515;--line:#262626;--text:#f2f2f2;--muted:#8a8a8a;--accent:#E31E24}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 'SignFont',Inter,"Helvetica Neue",Arial,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;border-bottom:1px solid var(--line);height:56px}
+.logo{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.logo i{width:24px;height:24px;display:block;background:linear-gradient(135deg,#1a1a1a 50%,var(--accent) 50%);border:1px solid #333}
+header .sub{color:var(--muted);font-size:12px}
+.app{display:grid;grid-template-columns:370px 1fr;height:calc(100vh - 56px)}
+aside{border-right:1px solid var(--line);overflow:auto;padding:18px 20px 60px}
+main{overflow:auto;display:flex;flex-direction:column}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:20px}
+.tab{background:var(--panel);border:1px solid var(--line);padding:10px 4px;font-size:12px;text-align:center}
+.tab small{display:block;opacity:.6;font-size:10px;margin-top:2px}
+.tab.on{background:var(--accent);border-color:var(--accent)}
+fieldset{border:0;padding:0;margin:0 0 22px}
+legend{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;padding:0}
+label.l{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+input[type=text],select,textarea{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:9px 10px;font:inherit;border-radius:0;outline:none}
+textarea{resize:vertical;min-height:100px}
+input[type=text]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.checks{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:13px}
+.checks label{display:flex;gap:8px;align-items:center;cursor:pointer}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.types button,.icons button{background:var(--panel);border:1px solid var(--line);padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px}
+.types button.on,.icons button.on{border-color:var(--accent);background:#2a0d0e}
+.types svg,.icons svg{width:22px;height:22px}
+.icons{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.colors{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sw{width:30px;height:30px;border:0;padding:0}
+.sw.on{outline:2px solid #fff;outline-offset:2px}
+.colors input[type=color]{width:30px;height:30px;border:1px solid var(--line);background:none;padding:0;cursor:pointer}
+.colors input[type=text]{width:90px}
+.compass{display:grid;grid-template-columns:repeat(3,42px);gap:4px}
+.compass button{height:42px;background:var(--panel);border:1px solid var(--line);font-size:18px}
+.compass button.on{background:var(--accent);border-color:var(--accent)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.seg button{background:var(--panel);border:1px solid var(--line);padding:9px}
+.seg button.on{background:#fff;color:#000}
+.btn{background:var(--panel);border:1px solid var(--line);padding:10px 14px;font-size:13px}
+.btn:hover{border-color:#555}
+.btn.red{background:var(--accent);border-color:var(--accent)}
+.hint{font-size:11px;color:var(--muted);margin-top:6px}
+.fontrow{display:flex;gap:6px;flex-wrap:wrap}
+.fontrow label{flex:1}
+.fontrow input{display:none}
+.fontrow span{display:block;text-align:center}
+.top{display:flex;justify-content:space-between;align-items:flex-end;padding:20px 28px 0;gap:16px;flex-wrap:wrap}
+.top h1{margin:0;font-size:20px;font-weight:500}
+.top .dim{color:var(--muted);font-size:13px}
+.stage{margin:16px 28px;background:linear-gradient(180deg,#e9e9e9,#cfcfcf);min-height:52vh;display:flex;align-items:center;justify-content:center;padding:6vh 5%;position:relative}
+.stage svg{position:relative;z-index:1;width:100%;height:auto;max-height:46vh;filter:drop-shadow(0 18px 24px rgba(0,0,0,.28)) drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.stage.portrait svg{width:auto;height:46vh}
+.stage.hang::before,.stage.hang::after{content:"";position:absolute;top:0;width:2px;height:50%;background:#222;z-index:0}
+.stage.hang::before{left:28%}.stage.hang::after{right:28%}
+.export{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:0 28px}
+.export select{width:auto}
+.set{padding:28px}
+.set h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:400;margin:0 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.set h2 .sp{flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:8px}
+.card .th{background:#ddd;padding:10px;display:flex;align-items:center;justify-content:center;height:120px;cursor:pointer}
+.card .th svg{max-width:100%;max-height:100px;width:auto;height:auto}
+.card .cap{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}
+.card .cap button{background:none;border:0;color:var(--muted);font-size:16px}
+.empty{color:var(--muted);font-size:13px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:10px 16px;font-size:13px;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:1}
+[hidden]{display:none!important}
+@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}aside{border-right:0;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i></i>Навигация · генератор табличек</div>
+  <div class="sub">Локальная версия — работает без интернета</div>
+</header>
+
+<div class="app">
+<aside>
+  <div class="tabs" id="tabs"></div>
+
+  <fieldset data-only="door,wall,hang">
+    <legend>Тип помещения</legend>
+    <div class="types" id="types"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Содержание</legend>
+    <div class="row">
+      <div data-only="door,wall,hang"><label class="l">Номер / диапазон</label><input type="text" data-k="number"></div>
+      <div><label class="l">Этаж</label><input type="text" data-k="floor"></div>
+    </div>
+    <div data-only="door,wall,hang">
+      <label class="l">Название (RU)</label><input type="text" data-k="nameRu">
+      <label class="l">Название (EN)</label><input type="text" data-k="nameEn">
+    </div>
+    <div data-only="floor">
+      <label class="l">Зоны этажа — каждая с новой строки</label>
+      <textarea data-k="floorList"></textarea>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" data-k="upper">Заглавные буквы</label>
+      <label><input type="checkbox" data-k="showEn">Английская строка</label>
+      <label data-only="door,wall,hang"><input type="checkbox" data-k="showIcon">Пиктограмма</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Цвет зоны</legend>
+    <div class="colors" id="colors"></div>
+  </fieldset>
+
+  <fieldset data-only="door,wall,hang">
+    <legend>Пиктограмма</legend>
+    <div class="icons" id="icons"></div>
+  </fieldset>
+
+  <fieldset data-only="wall,hang">
+    <legend>Направление стрелки</legend>
+    <div class="compass" data-arrowk="arrow"></div>
+  </fieldset>
+
+  <fieldset data-only="hang">
+    <legend>Второе направление (правая часть)</legend>
+    <div class="checks" style="margin-top:0"><label><input type="checkbox" data-k="b.on">Показать</label></div>
+    <div id="bfields">
+      <label class="l">Название (RU)</label><input type="text" data-k="b.nameRu">
+      <label class="l">Название (EN)</label><input type="text" data-k="b.nameEn">
+      <div class="row">
+        <div><label class="l">Номер / диапазон</label><input type="text" data-k="b.number"></div>
+        <div><label class="l">Пиктограмма</label><select data-k="b.icon" id="bicon"></select></div>
+      </div>
+      <label class="l">Стрелка</label>
+      <div class="compass" data-arrowk="b.arrow"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Оформление</legend>
+    <div class="seg" id="theme">
+      <button type="button" data-v="light">Светлая</button>
+      <button type="button" data-v="dark">Тёмная</button>
+    </div>
+    <div data-only="door" style="margin-top:8px"><button type="button" class="btn" id="reseed" style="width:100%">Перемешать грани паттерна</button></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Шрифт айдентики</legend>
+    <div class="fontrow">
+      <label class="btn"><input type="file" accept=".ttf,.otf,.woff,.woff2" data-font="regular"><span id="fr">Regular…</span></label>
+      <label class="btn"><input type="file" accept=".ttf,.otf,.woff,.woff2" data-font="bold"><span id="fb">Bold…</span></label>
+    </div>
+    <button type="button" class="btn" id="fontReset" style="width:100%;margin-top:6px">Сбросить шрифт</button>
+    <div class="hint">Загрузи свой Synergy (.ttf/.otf) — он встроится в SVG, PNG и PDF и сохранится в браузере.</div>
+  </fieldset>
+</aside>
+
+<main>
+  <div class="top">
+    <div><h1 id="title"></h1><div class="dim" id="dim"></div></div>
+  </div>
+  <div class="stage" id="stage"></div>
+  <div class="export">
+    <button type="button" class="btn red" data-ex="svg">Скачать SVG</button>
+    <button type="button" class="btn red" data-ex="png">Скачать PNG</button>
+    <button type="button" class="btn red" data-ex="pdf">Скачать PDF</button>
+    <button type="button" class="btn" data-ex="print">PDF в векторе (печать)</button>
+    <select id="dpi" class="btn"><option value="150">150 dpi</option><option value="300" selected>300 dpi</option></select>
+    <button type="button" class="btn" id="add">＋ В набор</button>
+  </div>
+  <div class="hint" style="padding:8px 28px 0">«PDF в векторе» — в окне печати выбери «Сохранить как PDF», поля: нет. Для типографии текст лучше перевести в кривые в Illustrator.</div>
+
+  <section class="set">
+    <h2>Набор табличек <span class="sp"></span>
+      <button type="button" class="btn" id="allSvg">Скачать все SVG</button>
+      <button type="button" class="btn" id="allPng">Скачать все PNG</button>
+      <button type="button" class="btn" id="clearSet">Очистить</button>
+    </h2>
+    <div class="grid" id="setGrid"></div>
+  </section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+/* ---------- data ---------- */
+const FORMATS={
+  door:{w:300,h:150,label:'Дверная',full:'Дверная табличка',theme:'light'},
+  wall:{w:450,h:160,label:'Настенная',full:'Настенный указатель',theme:'dark'},
+  hang:{w:1200,h:300,label:'Подвесная',full:'Подвесной указатель',theme:'dark'},
+  floor:{w:300,h:450,label:'Этажная',full:'Этажный навигатор',theme:'light'}
+};
+const ICONS={
+  aud:'<path d="M3 4h18v11H3zM8 15l-2 6M16 15l2 6M12 15v3M7 8h6M7 11h4"/>',
+  lab:'<path d="M9 3h6M10 3v6l-5.5 10.5A1 1 0 0 0 5.4 21h13.2a1 1 0 0 0 .9-1.5L14 9V3M7 15h10"/>',
+  dean:'<path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/>',
+  wc:'<circle cx="7" cy="4.5" r="1.7" fill="{C}" stroke="none"/><path fill="{C}" stroke="none" d="M5 8h4v6H8v7H6v-7H5z"/><circle cx="17" cy="4.5" r="1.7" fill="{C}" stroke="none"/><path fill="{C}" stroke="none" d="M15.6 8h2.8l2.1 7h-2.2v6h-2.6v-6h-2.2z"/><path d="M12 3v18"/>',
+  lib:'<path d="M12 6C10 4.5 7 4 3 4v14c4 0 7 .5 9 2 2-1.5 5-2 9-2V4c-4 0-7 .5-9 2zM12 6v14"/>',
+  event:'<path d="M3 5h18v16H3zM3 10h18M8 3v4M16 3v4"/><path fill="{C}" stroke="none" d="M12 12.2l1.2 2.5 2.7.3-2 1.9.5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.3z"/>',
+  work:'<path d="M4 20l1.2-4.8L16 4.4 19.6 8 8.8 18.8zM13.8 6.6l3.6 3.6"/>',
+  pc:'<path d="M3 4h18v11H3zM12 15v3M6 21h12M9 7.5l-2 2 2 2M15 7.5l2 2-2 2"/>',
+  cafe:'<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3"/>',
+  med:'<path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z"/>',
+  stairs:'<path d="M3 20h5v-5h5v-5h5V5h3"/>',
+  lift:'<path d="M5 3h14v18H5z"/><path fill="{C}" stroke="none" d="M12 6l3 4H9zM12 18l-3-4h6z"/>',
+  exit:'<path d="M14 3H5v18h9M10 12h11M17 8l4 4-4 4"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r="1.3" fill="{C}" stroke="none"/>'
+};
+const ICON_NAMES={aud:'Аудитория',lab:'Лаборатория',dean:'Деканат',wc:'WC',lib:'Библиотека',event:'Мероприятие',work:'Мастерская',pc:'Комп. класс',cafe:'Кафе',med:'Медпункт',stairs:'Лестница',lift:'Лифт',exit:'Выход',info:'Инфо'};
+const TYPES=[
+  {id:'aud',ru:'Аудитория',nameRu:'Учебная аудитория',nameEn:'Lecture room'},
+  {id:'lab',ru:'Лаборатория',nameRu:'Лаборатория',nameEn:'Laboratory'},
+  {id:'dean',ru:'Деканат',nameRu:'Деканат',nameEn:"Dean's office"},
+  {id:'wc',ru:'WC',nameRu:'Туалет',nameEn:'Restroom'},
+  {id:'lib',ru:'Библиотека',nameRu:'Библиотека',nameEn:'Library'},
+  {id:'event',ru:'Мероприятие',nameRu:'Мероприятие',nameEn:'Event'},
+  {id:'work',ru:'Мастерская',nameRu:'Мастерская рисунка',nameEn:'Drawing workshop'},
+  {id:'pc',ru:'Комп. класс',nameRu:'Компьютерный класс',nameEn:'Computer lab'},
+  {id:'cafe',ru:'Кафе',nameRu:'Кафе',nameEn:'Cafe'}
+];
+const COLORS=['#E31E24','#FF5A1F','#FFB400','#00A651','#0077C8','#6C3FB5','#E6007E'];
+const ARROWS=[['up-left','↖'],['up','↑'],['up-right','↗'],['left','←'],['none','·'],['right','→'],['down-left','↙'],['down','↓'],['down-right','↘']];
+const ANG={right:0,down:90,left:180,up:-90,'up-right':-45,'up-left':-135,'down-right':45,'down-left':135};
+
+const DEF={format:'door',type:'work',icon:'work',number:'101',floor:'1',nameRu:'Мастерская рисунка',nameEn:'Drawing workshop',
+  color:'#E31E24',arrow:'left',theme:'light',upper:true,showEn:true,showIcon:true,seed:0,
+  floorList:'Библиотека\nУчебные аудитории\nЦифровые мастерские\nПроектные пространства',
+  b:{on:true,nameRu:'Аудитории',nameEn:'Lecture rooms',number:'208–214',arrow:'right',icon:'aud'}};
+
+function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch(e){return d}}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+let state=Object.assign(structuredClone(DEF),load('signgen_state',{}));
+state.b=Object.assign(structuredClone(DEF.b),state.b||{});
+let setItems=load('signgen_set',[]);
+let fonts=load('signgen_fonts',{regular:null,bold:null});
+
+/* ---------- helpers ---------- */
+const f=n=>Math.round(n*100)/100;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const FAM="'SignFont', Inter, 'Helvetica Neue', Arial, sans-serif";
+const mctx=document.createElement('canvas').getContext('2d');
+function tw(t,size,w,ls){mctx.font=`${w} 100px ${FAM}`;return mctx.measureText(t).width/100*size+(ls||0)*size*Math.max(0,t.length-1)}
+function fit(t,size,w,maxW,ls){if(!t||maxW<=0)return size;const x=tw(t,size,w,ls);return x>maxW?Math.max(size*0.25,size*maxW/x):size}
+function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255]}
+function mix(a,b,t){const A=hex2rgb(a),B=hex2rgb(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
+function validHex(h){return/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(h)}
+
+/* ---------- renderer ---------- */
+function renderSVG(st,opt={}){
+  const F=FORMATS[st.format],W=F.w,H=F.h;
+  const dark=st.theme==='dark';
+  const C={bg:dark?'#0d0d0d':'#ffffff',fg:dark?'#ffffff':'#0d0d0d',muted:dark?'#9a9a9a':'#6b6b6b',zone:validHex(st.color)?st.color:'#E31E24'};
+  const up=s=>st.upper?String(s).toUpperCase():String(s);
+
+  const T=(x,y,t,size,o={})=>t?`<text x="${f(x)}" y="${f(y)}" font-size="${f(size)}" font-weight="${o.w||400}" fill="${o.fill||C.fg}" text-anchor="${o.anchor||'start'}"${o.ls?` letter-spacing="${f(o.ls*size)}"`:''}>${esc(t)}</text>`:'';
+  const icon=(id,x,y,size,color)=>ICONS[id]?`<g transform="translate(${f(x)} ${f(y)}) scale(${f(size/24)})" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">${ICONS[id].replaceAll('{C}',color)}</g>`:'';
+  const chevron=(cx,cy,h,dir,color)=>{
+    if(!dir||dir==='none')return'';const w=h*.42,t=h*.13;
+    const pts=[[0,0],[t,0],[w,h/2],[t,h],[0,h],[w-t,h/2]].map(([x,y])=>f(x-w/2)+','+f(y-h/2)).join(' ');
+    return`<polygon points="${pts}" fill="${color}" transform="translate(${f(cx)} ${f(cy)}) rotate(${ANG[dir]||0})"/>`};
+
+  function textBlock(L,x,cy,maxW,anchor){
+    L=L.filter(l=>l.t);if(!L.length)return'';
+    L.forEach(l=>l.s=fit(l.t,l.s,l.w,maxW,l.ls));
+    let total=0;L.forEach((l,i)=>{total+=l.s*.72+(i?L[i-1].s*.32+l.s*.22:0)});
+    let y=cy-total/2,out='';
+    L.forEach((l,i)=>{if(i)y+=L[i-1].s*.32+l.s*.22;y+=l.s*.72;out+=T(x,y,l.t,l.s,{w:l.w,fill:l.fill,anchor,ls:l.ls})});
+    return out}
+
+  function entry(e,x0,x1,cy,k,align){
+    const ch=46*k,cw=ch*.42,gap=16*k,box=40*k,dir=align==='left'?1:-1;
+    let cur=align==='left'?x0:x1,out='';
+    if(e.arrow&&e.arrow!=='none'){out+=chevron(cur+dir*cw/2,cy,ch,e.arrow,C.zone);cur+=dir*(cw+gap*1.4)}
+    if(e.icon&&ICONS[e.icon]){const bx=align==='left'?cur:cur-box;
+      out+=`<rect x="${f(bx)}" y="${f(cy-box/2)}" width="${f(box)}" height="${f(box)}" fill="${C.zone}"/>`+icon(e.icon,bx+box*.17,cy-box*.33,box*.66,'#ffffff');cur+=dir*(box+gap)}
+    const maxW=align==='left'?x1-cur:cur-x0;
+    out+=textBlock([
+      {t:e.nameRu?up(e.nameRu):'',s:20*k,w:500,ls:.02,fill:C.fg},
+      {t:e.number||'',s:18*k,w:400,ls:0,fill:C.fg},
+      {t:st.showEn&&e.nameEn?up(e.nameEn):'',s:7.5*k,w:400,ls:.08,fill:C.muted}
+    ],cur,cy,maxW,align==='left'?'start':'end');
+    return out}
+  const alignOf=a=>['right','up-right','down-right'].includes(a)?'right':'left';
+  const A={nameRu:st.nameRu,nameEn:st.nameEn,number:st.number,arrow:st.arrow,icon:st.showIcon?st.icon:null};
+
+  function facets(x,y,w,h,seed){
+    const r=rng(seed),cols=3,rows=4,P=[];
+    for(let j=0;j<=rows;j++){P[j]=[];for(let i=0;i<=cols;i++){
+      let px=x+w*i/cols,py=y+h*j/rows;
+      if(i>0&&i<cols)px+=(r()-.5)*w/cols*.6;
+      if(j>0&&j<rows)py+=(r()-.5)*h/rows*.6;
+      P[j][i]=[px,py]}}
+    let out='';
+    const tri=(a,b,c)=>{const cx=(a[0]+b[0]+c[0])/3,cy=(a[1]+b[1]+c[1])/3,u=(cx-x)/w,v=(cy-y)/h;
+      const score=v*.95+(1-u)*.5+(r()-.5)*.3;
+      const col=score>1?mix(C.zone,r()<.5?'#000000':'#ffffff',r()*(r()<.5?.35:.18)):mix('#0c0c0c','#262626',r());
+      out+=`<polygon points="${[a,b,c].map(p=>f(p[0])+','+f(p[1])).join(' ')}" fill="${col}" stroke="${col}" stroke-width=".3"/>`};
+    for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const a=P[j][i],b=P[j][i+1],c=P[j+1][i+1],d=P[j+1][i];
+      if(r()<.5){tri(a,b,c);tri(a,c,d)}else{tri(a,b,d);tri(b,c,d)}}
+    return out}
+
+  let body=`<rect width="${W}" height="${H}" fill="${C.bg}"/>`;
+  if(st.format==='door'){
+    const P=100;
+    body+=facets(0,0,P,H,hash((st.number||'')+'|'+st.nameRu)+(st.seed||0)*7919);
+    if(st.showIcon)body+=icon(st.icon,13,13,22,'#ffffff');
+    const tx=P+24,maxW=W-tx-18;
+    if(st.number){
+      body+=T(tx,74,st.number,fit(st.number,56,700,maxW),{w:700});
+      body+=`<rect x="${tx}" y="86" width="18" height="2.2" fill="${C.zone}"/>`;
+      body+=T(tx,106,up(st.nameRu),fit(up(st.nameRu),12.5,500,maxW,.03),{w:500,ls:.03});
+      if(st.showEn)body+=T(tx,120,up(st.nameEn),fit(up(st.nameEn),7,400,maxW,.08),{fill:C.muted,ls:.08});
+    }else{
+      body+=`<rect x="${tx}" y="48" width="18" height="2.2" fill="${C.zone}"/>`;
+      body+=T(tx,82,up(st.nameRu),fit(up(st.nameRu),20,500,maxW,.02),{w:500,ls:.02});
+      if(st.showEn)body+=T(tx,100,up(st.nameEn),fit(up(st.nameEn),8.5,400,maxW,.08),{fill:C.muted,ls:.08});
+    }
+    if(st.floor)body+=T(W-14,H-12,up('Этаж '+st.floor+(st.showEn?' · Floor '+st.floor:'')),5,{fill:C.muted,anchor:'end',ls:.12});
+  }else if(st.format==='wall'){
+    body+=`<rect width="8" height="${H}" fill="${C.zone}"/>`;
+    body+=entry(A,8+28,W-28,H/2,1.25,alignOf(st.arrow));
+    if(st.floor)body+=T(W-14,H-10,up('Этаж '+st.floor),5,{fill:C.muted,anchor:'end',ls:.12});
+  }else if(st.format==='hang'){
+    const BH=H-22,cy=BH/2;
+    body+=`<rect y="${BH}" width="${W}" height="22" fill="${C.zone}"/>`;
+    if(st.b.on){
+      body+=entry(A,55,W/2-30,cy,2.4,'left');
+      body+=entry({nameRu:st.b.nameRu,nameEn:st.b.nameEn,number:st.b.number,arrow:st.b.arrow,icon:st.showIcon&&st.b.icon!=='none'?st.b.icon:null},W/2+30,W-55,cy,2.4,'right');
+    }else body+=entry(A,55,W-55,cy,2.4,alignOf(st.arrow));
+  }else{
+    body+=T(28,40,up('Этаж'+(st.showEn?' / Floor':'')),9,{w:500,fill:C.muted,ls:.12});
+    body+=T(22,255,st.floor,fit(st.floor,230,700,250),{w:700});
+    body+=`<rect x="30" y="280" width="40" height="4" fill="${C.zone}"/>`;
+    const lines=(st.floorList||'').split('\n').map(s=>s.trim()).filter(Boolean);
+    const step=lines.length>1?Math.min(24,(H-34-318)/(lines.length-1)):24;
+    lines.forEach((l,i)=>body+=T(30,318+i*step,up(l),fit(up(l),Math.min(12,step*.55),500,240,.03),{w:500,ls:.03}));
+  }
+
+  let defs='';
+  if(opt.embed&&fonts.regular){
+    defs=`<defs><style>@font-face{font-family:'SignFont';src:url(${fonts.regular});font-weight:${fonts.bold?'100 599':'100 900'}}${fonts.bold?`@font-face{font-family:'SignFont';src:url(${fonts.bold});font-weight:600 900}`:''}</style></defs>`;
+  }
+  const size=opt.px?`width="${opt.px[0]}" height="${opt.px[1]}"`:`width="${W}mm" height="${H}mm"`;
+  return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" ${size} font-family="${FAM.replace(/"/g,"'")}">${defs}${body}</svg>`;
+}
+
+/* ---------- fonts ---------- */
+async function applyFonts(){
+  [...document.fonts].filter(x=>x.family==='SignFont'||x.family==="'SignFont'"||x.family==='"SignFont"').forEach(x=>document.fonts.delete(x));
+  try{
+    if(fonts.regular){const r=new FontFace('SignFont',`url(${fonts.regular})`,{weight:fonts.bold?'100 599':'100 900'});await r.load();document.fonts.add(r)}
+    if(fonts.bold){const b=new FontFace('SignFont',`url(${fonts.bold})`,{weight:'600 900'});await b.load();document.fonts.add(b)}
+  }catch(e){toast('Не удалось прочитать шрифт')}
+  document.getElementById('fr').textContent=fonts.regular?'Regular ✓':'Regular…';
+  document.getElementById('fb').textContent=fonts.bold?'Bold ✓':'Bold…';
+  update();renderSet();
+}
+document.querySelectorAll('[data-font]').forEach(inp=>inp.addEventListener('change',()=>{
+  const file=inp.files[0];if(!file)return;const rd=new FileReader();
+  rd.onload=()=>{fonts[inp.dataset.font]=rd.result;if(!store('signgen_fonts',fonts))toast('Шрифт подключён (слишком большой для автосохранения)');applyFonts()};
+  rd.readAsDataURL(file);inp.value='';
+}));
+document.getElementById('fontReset').addEventListener('click',()=>{fonts={regular:null,bold:null};store('signgen_fonts',fonts);applyFonts()});
+
+/* ---------- UI build ---------- */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const miniIcon=id=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square">${ICONS[id].replaceAll('{C}','currentColor')}</svg>`;
+
+$('#tabs').innerHTML=Object.entries(FORMATS).map(([k,v])=>`<button type="button" class="tab" data-f="${k}">${v.label}<small>${v.w}×${v.h}</small></button>`).join('');
+$('#types').innerHTML=TYPES.map(t=>`<button type="button" data-t="${t.id}">${miniIcon(t.id)}${t.ru}</button>`).join('');
+$('#icons').innerHTML=Object.keys(ICONS).map(k=>`<button type="button" data-i="${k}" title="${ICON_NAMES[k]}">${miniIcon(k)}</button>`).join('');
+$('#bicon').innerHTML='<option value="none">— нет —</option>'+Object.keys(ICONS).map(k=>`<option value="${k}">${ICON_NAMES[k]}</option>`).join('');
+$('#colors').innerHTML=COLORS.map(c=>`<button type="button" class="sw" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')+
+  `<input type="color" id="cpick" aria-label="Свой цвет"><input type="text" id="chex" maxlength="7" aria-label="HEX">`;
+$$('.compass').forEach(c=>c.innerHTML=ARROWS.map(([v,g])=>`<button type="button" data-v="${v}" aria-label="${v}">${g}</button>`).join(''));
+
+const getK=(o,k)=>k.split('.').reduce((a,p)=>a[p],o);
+const setK=(o,k,v)=>{const p=k.split('.'),l=p.pop();p.reduce((a,x)=>a[x],o)[l]=v};
+
+$$('[data-k]').forEach(el=>{const k=el.dataset.k;
+  el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'?'change':'input',()=>{setK(state,k,el.type==='checkbox'?el.checked:el.value);update()})});
+$$('.tab').forEach(b=>b.addEventListener('click',()=>{state.format=b.dataset.f;state.theme=FORMATS[state.format].theme;update()}));
+$$('#types button').forEach(b=>b.addEventListener('click',()=>{const t=TYPES.find(x=>x.id===b.dataset.t);
+  Object.assign(state,{type:t.id,icon:t.id,nameRu:t.nameRu,nameEn:t.nameEn});syncInputs();update()}));
+$$('#icons button').forEach(b=>b.addEventListener('click',()=>{state.icon=b.dataset.i;update()}));
+$$('.sw').forEach(b=>b.addEventListener('click',()=>{state.color=b.dataset.c;syncInputs();update()}));
+$('#cpick').addEventListener('input',e=>{state.color=e.target.value;$('#chex').value=e.target.value.toUpperCase();update()});
+$('#chex').addEventListener('input',e=>{let v=e.target.value.trim();if(v&&v[0]!=='#')v='#'+v;if(validHex(v)){state.color=v;$('#cpick').value=v.length===4?'#'+v.slice(1).split('').map(c=>c+c).join(''):v;update()}});
+$$('.compass').forEach(c=>c.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{setK(state,c.dataset.arrowk,b.dataset.v);update()})));
+$$('#theme button').forEach(b=>b.addEventListener('click',()=>{state.theme=b.dataset.v;update()}));
+$('#reseed').addEventListener('click',()=>{state.seed=(state.seed||0)+1;update()});
+
+function syncInputs(){
+  $$('[data-k]').forEach(el=>{const v=getK(state,el.dataset.k);if(el.type==='checkbox')el.checked=!!v;else if(el.value!==v)el.value=v??''});
+  const c=validHex(state.color)?state.color:'#E31E24';$('#cpick').value=c.length===4?'#'+c.slice(1).split('').map(x=>x+x).join(''):c;$('#chex').value=c.toUpperCase();
+}
+
+function update(){
+  const F=FORMATS[state.format];
+  $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.f===state.format));
+  $$('[data-only]').forEach(el=>el.hidden=!el.dataset.only.split(',').includes(state.format));
+  $$('#types button').forEach(b=>b.classList.toggle('on',b.dataset.t===state.type));
+  $$('#icons button').forEach(b=>b.classList.toggle('on',b.dataset.i===state.icon));
+  $$('.sw').forEach(b=>b.classList.toggle('on',b.dataset.c.toLowerCase()===String(state.color).toLowerCase()));
+  $$('.compass').forEach(c=>{const v=getK(state,c.dataset.arrowk);c.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v))});
+  $$('#theme button').forEach(b=>b.classList.toggle('on',b.dataset.v===state.theme));
+  $('#bfields').hidden=!state.b.on;
+  $('#title').textContent=F.full;
+  $('#dim').textContent=`${F.w} × ${F.h} мм · ${state.theme==='dark'?'тёмная':'светлая'} версия`;
+  const st=$('#stage');st.className='stage'+(F.h>F.w?' portrait':'')+(state.format==='hang'?' hang':'');
+  st.innerHTML=renderSVG(state);
+  store('signgen_state',state);
+}
+
+/* ---------- export ---------- */
+const fname=(st,ext)=>`tablichka_${st.format}_${(st.format==='floor'?'etazh'+st.floor:(st.number||st.nameRu||'sign'))}`.replace(/[^\wа-яё\-]+/gi,'_')+'.'+ext;
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
+
+const svgBlob=st=>new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+renderSVG(st,{embed:true})],{type:'image/svg+xml'});
+async function rasterize(st,dpi,maxPx){
+  const F=FORMATS[st.format];let pw=F.w/25.4*dpi,ph=F.h/25.4*dpi;const sc=Math.min(1,maxPx/Math.max(pw,ph));
+  pw=Math.round(pw*sc);ph=Math.round(ph*sc);
+  const url=URL.createObjectURL(new Blob([renderSVG(st,{embed:true,px:[pw,ph]})],{type:'image/svg+xml'}));
+  const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
+  await sleep(60);
+  const c=document.createElement('canvas');c.width=pw;c.height=ph;c.getContext('2d').drawImage(img,0,0,pw,ph);URL.revokeObjectURL(url);
+  return c}
+async function pngBlob(st){const c=await rasterize(st,+$('#dpi').value,12000);return new Promise(r=>c.toBlob(r,'image/png'))}
+async function pdfBlob(st){
+  const c=await rasterize(st,+$('#dpi').value,9000);
+  const jpg=new Uint8Array(await(await new Promise(r=>c.toBlob(r,'image/jpeg',.95))).arrayBuffer());
+  const F=FORMATS[st.format],W=f(F.w*72/25.4),H=f(F.h*72/25.4);
+  const enc=new TextEncoder(),parts=[],offs=[];let len=0;
+  const push=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length};
+  push('%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n');
+  const obj=(n,s)=>{offs[n]=len;push(`${n} 0 obj\n${s}\nendobj\n`)};
+  obj(1,'<</Type/Catalog/Pages 2 0 R>>');
+  obj(2,'<</Type/Pages/Kids[3 0 R]/Count 1>>');
+  obj(3,`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${H}]/Resources<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>`);
+  offs[4]=len;push(`4 0 obj\n<</Type/XObject/Subtype/Image/Width ${c.width}/Height ${c.height}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${jpg.length}>>\nstream\n`);push(jpg);push('\nendstream\nendobj\n');
+  const cs=`q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`;obj(5,`<</Length ${cs.length}>>\nstream\n${cs}\nendstream`);
+  const xref=len;push('xref\n0 6\n0000000000 65535 f \n'+offs.slice(1).map(o=>String(o).padStart(10,'0')+' 00000 n \n').join(''));
+  push(`trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'})}
+function printVector(st){
+  const F=FORMATS[st.format],fr=document.createElement('iframe');
+  fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(fr);
+  const d=fr.contentDocument;d.open();
+  d.write(`<!doctype html><html><head><meta charset="utf-8"><title>${fname(st,'pdf')}</title><style>@page{size:${F.w}mm ${F.h}mm;margin:0}html,body{margin:0;padding:0}svg{display:block;width:${F.w}mm;height:${F.h}mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${renderSVG(st,{embed:true})}</body></html>`);
+  d.close();
+  setTimeout(async()=>{try{await d.fonts.ready}catch(e){}fr.contentWindow.focus();fr.contentWindow.print();setTimeout(()=>fr.remove(),3000)},400)}
+
+$$('[data-ex]').forEach(b=>b.addEventListener('click',async()=>{
+  const t=b.dataset.ex,st=structuredClone(state);
+  try{
+    if(t==='svg')dl(svgBlob(st),fname(st,'svg'));
+    if(t==='png'){toast('Готовлю PNG…');dl(await pngBlob(st),fname(st,'png'))}
+    if(t==='pdf'){toast('Готовлю PDF…');dl(await pdfBlob(st),fname(st,'pdf'))}
+    if(t==='print')printVector(st);
+  }catch(e){console.error(e);toast('Ошибка экспорта — попробуй 150 dpi')}
+}));
+
+/* ---------- set ---------- */
+function renderSet(){
+  const g=$('#setGrid');
+  if(!setItems.length){g.innerHTML='<div class="empty">Пока пусто. Настрой табличку и нажми «＋ В набор» — так соберёшь всю систему навигации здания.</div>';return}
+  g.innerHTML=setItems.map((s,i)=>`<div class="card"><div class="th" data-open="${i}" title="Открыть">${renderSVG(s)}</div>
+    <div class="cap"><span>${FORMATS[s.format].label} · ${esc(s.format==='floor'?'этаж '+s.floor:(s.number||s.nameRu))}</span><button type="button" data-del="${i}" aria-label="Удалить">×</button></div></div>`).join('');
+  g.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',()=>{state=structuredClone(setItems[+el.dataset.open]);syncInputs();update();window.scrollTo({top:0,behavior:'smooth'})}));
+  g.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{setItems.splice(+el.dataset.del,1);store('signgen_set',setItems);renderSet()}));
+}
+$('#add').addEventListener('click',()=>{setItems.push(structuredClone(state));store('signgen_set',setItems);renderSet();toast('Добавлено в набор')});
+$('#clearSet').addEventListener('click',()=>{if(setItems.length&&confirm('Очистить весь набор?')){setItems=[];store('signgen_set',setItems);renderSet()}});
+$('#allSvg').addEventListener('click',async()=>{for(const s of setItems){dl(svgBlob(s),fname(s,'svg'));await sleep(350)}});
+$('#allPng').addEventListener('click',async()=>{toast('Готовлю PNG…');for(const s of setItems){dl(await pngBlob(s),fname(s,'png'));await sleep(350)}});
+
+/* ---------- init ---------- */
+syncInputs();
+if(fonts.regular||fonts.bold)applyFonts();else{update();renderSet()}
+})();
+</script>
+</body>
+</html>
